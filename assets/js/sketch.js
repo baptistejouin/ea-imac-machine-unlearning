@@ -12,19 +12,15 @@ let classifier,
   img = [];
 const canvaSize = 500;
 const shapeType = ["SQUARE", "CIRCLE"];
-const resultDOM = document
-  .querySelector("#result-remplate-js")
-  .content.cloneNode(true);
-const notice = resultDOM.querySelector(".notice");
-const body = document.querySelector("body");
+const notice = document.querySelector(".notice");
 
 // Main params for used in the GUI
 const PARAMS = {
   currentImage: Object.keys(images)[0], // Define here the index of the selected default image
-  shapeNumber: 12,
-  shapeType: shapeType[0],
-  minShapeSize: 50,
-  maxShapeSize: 100,
+  shapeNumber: 3,
+  shapeType: shapeType[1],
+  shapeSize: 5,
+  classify: false,
   redraw: () => redraw(),
 };
 
@@ -47,39 +43,56 @@ function initGUI() {
     .step(1)
     .onChange(() => redraw());
   shapeFolder
-    .add(PARAMS, "minShapeSize")
-    .min(10)
-    .max(500)
+    .add(PARAMS, "shapeSize")
+    .min(1)
+    .max(20)
+    .step(0.5)
     .onChange(() => redraw());
-  shapeFolder
-    .add(PARAMS, "maxShapeSize")
-    .min(10)
-    .max(500)
-    .onChange(() => redraw());
+  gui.add(PARAMS, "classify").onChange(() => redraw());
   gui.add(PARAMS, "redraw");
 }
 
 const getRandomInt = (min, max) => Math.floor(Math.random() * max + min);
+
+// random circles
+function circles(d) {
+  let pos_x = random(canvaSize);
+  let pos_y = random(canvaSize);
+  for (let i = 0; i < 20; i++) {
+    const delta1 = random(10 * PARAMS.shapeSize);
+    const delta2 = random(10 * PARAMS.shapeSize);
+    const delta3 = random(2 * PARAMS.shapeSize, 6 * PARAMS.shapeSize);
+    const size = d + delta3;
+    ellipse(pos_x + delta1 - size, pos_y + delta2 - size, size);
+  }
+}
+
+// random squares
+function squares(d) {
+  let delta1;
+  let delta2;
+  let pos_x = random(canvaSize);
+  let pos_y = random(canvaSize);
+  for (let i = 0; i < 3; i++) {
+    delta1 = random(10 * PARAMS.shapeSize);
+    delta2 = random(10 * PARAMS.shapeSize);
+    delta3 = random(10 * PARAMS.shapeSize, 20 * PARAMS.shapeSize);
+    square(pos_x + delta1, pos_y + delta2, d + delta3);
+  }
+}
 
 function drawShapes() {
   noFill();
   stroke(0);
 
   for (let i = 0; i < PARAMS.shapeNumber; i++) {
-    const size = getRandomInt(PARAMS.minShapeSize, PARAMS.maxShapeSize);
-    let coord_x = canvaSize - getRandomInt(0, canvaSize - size) - size / 2;
-    let coord_y = canvaSize - getRandomInt(0, canvaSize - size) - size / 2;
-
+    const f = 1.2;
     switch (PARAMS.shapeType) {
       case "SQUARE":
-        for (let j = 0; j < 3; j++) {
-          square(coord_x, coord_y, size - (j + getRandomInt(50, 100)));
-        }
+        squares((20 + i) * f);
         break;
       case "CIRCLE":
-        for (let j = 0; j < 3; j++) {
-          circle(coord_x, coord_y, size - (j + getRandomInt(50, 100)));
-        }
+        circles((20 + i) * f);
       default:
         break;
     }
@@ -103,8 +116,6 @@ function displayResult(error, results) {
       2
     )})`;
   }
-
-  body.appendChild(resultDOM);
 }
 
 function preload() {
@@ -120,13 +131,27 @@ function preload() {
 
 function setup() {
   canvas = createCanvas(canvaSize, canvaSize);
+  canvas.parent("canvas-1");
   background(200);
   initGUI();
   noLoop();
 }
 
 function draw() {
-  image(img[PARAMS.currentImage], 0, 0, canvaSize, canvaSize);
+  image(
+    img[PARAMS.currentImage],
+    0,
+    0,
+    canvaSize,
+    canvaSize,
+    0,
+    0,
+    img[PARAMS.currentImage].width,
+    img[PARAMS.currentImage].height,
+    COVER,
+    CENTER
+  );
+  // image(img[PARAMS.currentImage], 0, 0, canvaSize, canvaSize, img.width, img.height, CONTAIN, LEFT);
   drawShapes();
-  classifier.classify(canvas, displayResult);
+  PARAMS.classify && classifier.classify(canvas, displayResult);
 }
