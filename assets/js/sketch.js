@@ -4,6 +4,8 @@ const images = {
   bird: "assets/images/mésange_azurée.jpeg",
   sunflower: "assets/images/sunflower.jpeg",
   polar_bear: "assets/images/polar_bear.jpeg",
+  train:"assets/images/train.jpg",
+  fish:"assets/images/fish.jpg",
 };
 
 // Essential variables for our program
@@ -25,6 +27,8 @@ const PARAMS = {
   shapeNumber: 3,
   shapeType: shapeType[1],
   shapeSize: 5,
+  strokeWeight: 1,
+  color: ('#000000'),
   classify: true,
   redraw: () => redraw(),
   autodraw: () => make100draw(),
@@ -54,6 +58,16 @@ function initGUI() {
     .max(20)
     .step(0.5)
     .onChange(() => redraw());
+  shapeFolder
+    .add(PARAMS, "strokeWeight")
+    .min(1)
+    .max(10)
+    .step(0.5)
+    .onChange(() => redraw());
+  shapeFolder
+    .addColor(PARAMS, "color")
+    .onChange(() => redraw());
+
   gui.add(PARAMS, "classify").onChange(() => redraw());
   gui.add(PARAMS, "redraw");
   gui.add(PARAMS, "autodraw").name("plot graphs");
@@ -180,8 +194,8 @@ function squares(d) {
 
 function drawShapes() {
   noFill();
-  stroke(0);
-
+  stroke(PARAMS.color);
+  strokeWeight(PARAMS.strokeWeight);
   for (let i = 0; i < PARAMS.shapeNumber; i++) {
     const f = 1.2;
     switch (PARAMS.shapeType) {
@@ -194,6 +208,7 @@ function drawShapes() {
         break;
     }
   }
+
 }
 
 function countOccurrences(arr) {
