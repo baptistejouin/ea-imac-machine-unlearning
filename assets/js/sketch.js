@@ -4,6 +4,8 @@ const images = {
   bird: "assets/images/mésange_azurée.jpeg",
   sunflower: "assets/images/sunflower.jpeg",
   polar_bear: "assets/images/polar_bear.jpeg",
+  train:"assets/images/train.jpg",
+  fish:"assets/images/fish.jpg",
 };
 
 // Essential variables for our program
