@@ -20,6 +20,8 @@ const PARAMS = {
   shapeNumber: 3,
   shapeType: shapeType[1],
   shapeSize: 5,
+  strokeWeight: 1,
+  color: ('#000000'),
   classify: false,
   redraw: () => redraw(),
 };
@@ -48,6 +50,16 @@ function initGUI() {
     .max(20)
     .step(0.5)
     .onChange(() => redraw());
+  shapeFolder
+    .add(PARAMS, "strokeWeight")
+    .min(1)
+    .max(10)
+    .step(0.5)
+    .onChange(() => redraw());
+  shapeFolder
+    .addColor(PARAMS, "color")
+    .onChange(() => redraw());
+
   gui.add(PARAMS, "classify").onChange(() => redraw());
   gui.add(PARAMS, "redraw");
 }
@@ -83,8 +95,8 @@ function squares(d) {
 
 function drawShapes() {
   noFill();
-  stroke(0);
-
+  stroke(PARAMS.color);
+  strokeWeight(PARAMS.strokeWeight);
   for (let i = 0; i < PARAMS.shapeNumber; i++) {
     const f = 1.2;
     switch (PARAMS.shapeType) {
@@ -97,6 +109,7 @@ function drawShapes() {
         break;
     }
   }
+
 }
 
 function displayResult(error, results) {
