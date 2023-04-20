@@ -4,15 +4,7 @@ Research into the biases of machine learning.
 
 Project carried out as part of the first year **IMAC** engineering school's **algorithmic aesthetics** course.
 
-## Todo
-- [ ] Plusieurs filtres/modes (3?)
-- [ ] Paramétrage commun des modes
-- [ ] Liste des réponses
+## Lien github
+https://github.com/baptistejouin/machine-unlearning.git
 
-## Idées
-- RGB Channel Ranges
-- Folders par type de paramètres
-- `animate() {}` on controls
-- taille de la ligne
-- plus impactant visuelement
-- depart d'analyse (quel est la méthode la plus efficace?)
+![ml5_form](https://user-images.githubusercontent.com/116732710/233450665-a1c4f2a6-5d11-4335-9f32-1d6fdd205b1b.png)
