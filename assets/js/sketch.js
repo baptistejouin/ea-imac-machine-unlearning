@@ -11,10 +11,15 @@ const images = {
 // Essential variables for our program
 let classifier,
   canvas,
-  img = [];
+  img = [],
+  storedResults = [],
+  charElements = [null, null],
+  autoDraw = false;
 const canvaSize = 500;
 const shapeType = ["SQUARE", "CIRCLE"];
 const notice = document.querySelector(".notice");
+const chartDOM = document.getElementById("char-1");
+const chartDOM2 = document.getElementById("char-2");
 
 // Main params for used in the GUI
 const PARAMS = {
@@ -24,8 +29,9 @@ const PARAMS = {
   shapeSize: 5,
   strokeWeight: 1,
   color: ('#000000'),
-  classify: false,
+  classify: true,
   redraw: () => redraw(),
+  autodraw: () => make100draw(),
 };
 
 // GUI with the "lil GUI" library
@@ -64,8 +70,99 @@ function initGUI() {
 
   gui.add(PARAMS, "classify").onChange(() => redraw());
   gui.add(PARAMS, "redraw");
+  gui.add(PARAMS, "autodraw").name("plot graphs");
 }
 
+function initChar() {
+  const data1 = {
+    labels: ["Probability of output"],
+    datasets: [
+      {
+        label: shapeType[0],
+        data: [0],
+        fill: true,
+        backgroundColor: "rgba(255, 99, 132, 0.2)",
+        borderColor: "rgb(255, 99, 132)",
+        pointBackgroundColor: "rgb(255, 99, 132)",
+        pointBorderColor: "#fff",
+        pointHoverBackgroundColor: "#fff",
+        pointHoverBorderColor: "rgb(255, 99, 132)",
+      },
+    ],
+  };
+
+  const data2 = {
+    labels: ["Probability of output"],
+    datasets: [
+      {
+        label: shapeType[1],
+        data: [0],
+        fill: true,
+        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        borderColor: "rgb(75, 192, 192)",
+        pointBackgroundColor: "rgb(75, 192, 192)",
+        pointBorderColor: "#fff",
+        pointHoverBackgroundColor: "#fff",
+        pointHoverBorderColor: "rgb(75, 192, 192)",
+      },
+    ],
+  };
+
+  const config1 = {
+    type: "radar",
+    data: data1,
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: `Generation with ${shapeType[0]} (based on 100 generations)`,
+        },
+        filler: {
+          propagate: false,
+        },
+        "samples-filler-analyser": {
+          target: "chart-analyser",
+        },
+      },
+      interaction: {
+        intersect: false,
+      },
+    },
+  };
+  const config2 = {
+    type: "radar",
+    data: data2,
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: `Generation with ${shapeType[1]} (based on 100 generations)`,
+        },
+        filler: {
+          propagate: false,
+        },
+        "samples-filler-analyser": {
+          target: "chart-analyser",
+        },
+      },
+      interaction: {
+        intersect: false,
+      },
+    },
+  };
+
+  charElements[0] = new Chart(chartDOM, config1);
+  charElements[1] = new Chart(chartDOM2, config2);
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+function truncateString(str, num) {
+  if (str.length > num) {
+    return str.slice(0, num) + "...";
+  } else {
+    return str;
+  }
+}
 const getRandomInt = (min, max) => Math.floor(Math.random() * max + min);
 
 // random circles
@@ -114,22 +211,71 @@ function drawShapes() {
 
 }
 
-function displayResult(error, results) {
-  notice.innerHTML = "";
+function countOccurrences(arr) {
+  let cleanedArr = arr.map((item) => item.replace(",", ""));
+  return cleanedArr.reduce((obj, item) => {
+    obj[item] = obj[item] ? obj[item] + 1 : 1;
+    return obj;
+  }, {});
+}
 
+function handleResult(error, results) {
   if (error) {
     console.error(error);
     return;
   }
+  if (autoDraw) {
+    for (const result of results) {
+      storedResults.push(result.label);
+    }
+  } else {
+    displayResult(results);
+  }
+}
 
-  console.log(results);
+function updateChar(charIndex) {
+  sortedData = countOccurrences(storedResults);
+  dataKeys = Object.keys(sortedData);
+  dataValues = Object.values(sortedData);
+  valueToPercent = dataValues.map(
+    (value) => (value / dataValues.reduce((acc, val) => acc + val, 0)) * 100
+  );
+
+  charElements[charIndex].data.labels = dataKeys.map((item) =>
+    truncateString(item, 20)
+  );
+  charElements[charIndex].data.datasets[0].data = valueToPercent;
+  charElements[charIndex].update();
+}
+
+async function make100draw() {
+  autoDraw = true;
+  storedResults = [];
+  const currentValue = PARAMS.shapeType;
+
+  PARAMS.shapeType = shapeType[0];
+  for (let i = 0; i < 100; i++) {
+    redraw();
+    await sleep(10);
+  }
+  updateChar(0);
+
+  PARAMS.shapeType = shapeType[1];
+  for (let i = 0; i < 100; i++) {
+    redraw();
+    await sleep(10);
+  }
+  updateChar(1);
+
+  PARAMS.shapeType = currentValue;
+  autoDraw = false;
+}
+
+function displayResult(results) {
+  notice.innerHTML = "";
 
   for (const result of results) {
-    notice.innerHTML += `<div>${result.label} (${nf(
-      results[0].confidence,
-      0,
-      2
-    )})`;
+    notice.innerHTML += `<div>${result.label} (${nf(result.confidence, 0, 2)})`;
   }
 }
 
@@ -149,6 +295,7 @@ function setup() {
   canvas.parent("canvas-1");
   background(200);
   initGUI();
+  initChar();
   noLoop();
 }
 
@@ -166,7 +313,6 @@ function draw() {
     COVER,
     CENTER
   );
-  // image(img[PARAMS.currentImage], 0, 0, canvaSize, canvaSize, img.width, img.height, CONTAIN, LEFT);
   drawShapes();
-  PARAMS.classify && classifier.classify(canvas, displayResult);
+  PARAMS.classify && classifier.classify(canvas, handleResult);
 }
